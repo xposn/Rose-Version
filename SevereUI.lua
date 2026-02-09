@@ -38,8 +38,8 @@ local LAYOUT = {
     secGap       = 8,
     sliderH      = 6,
     headerH      = 28,
-    configDir    = "SevereUI",
-    configSub    = "SevereUI/Configs",
+    configDir    = "p3psiBladeBall",
+    configSub    = "p3psiBladeBall/Configs",
 }
 
 
