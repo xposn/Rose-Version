@@ -1,14 +1,3 @@
---[[
-    SevereUI v6.0 - "Thug Sense" Style
-    Drawing-based UI library for Severe external
-    Dark / rose accent aesthetic matching Thug Sense
-    Uses: Drawing API, getmouseposition(), isleftpressed(), getpressedkeys(), RunService.Render
-    Global toggle: HOME key (keycode 36)
-]]
-
-----------------------------------------------------------------
--- THEME & LAYOUT
-----------------------------------------------------------------
 
 local COLORS = {
     accent     = Color3.fromRGB(200, 140, 140),
@@ -53,9 +42,6 @@ local LAYOUT = {
     configSub    = "SevereUI/Configs",
 }
 
-----------------------------------------------------------------
--- MATH HELPERS
-----------------------------------------------------------------
 
 local floor, max, min, abs, clk = math.floor, math.max, math.min, math.abs, os.clock
 
@@ -119,9 +105,6 @@ local function safeCall(fn, ...)
     end
 end
 
-----------------------------------------------------------------
--- KEY MAPS
-----------------------------------------------------------------
 
 local KEY_DISPLAY = {
     [8]="BS",[9]="TAB",[13]="ENT",[27]="ESC",[32]="SPC",
@@ -141,7 +124,6 @@ local KEY_DISPLAY = {
     [192]="`",[219]="[",[220]="\\",[221]="]",[222]="'",
 }
 
--- Name-based key char maps (works with Enum.KeyCode.Name)
 local KEY_NAME_CHAR = {
     A="a",B="b",C="c",D="d",E="e",F="f",G="g",
     H="h",I="i",J="j",K="k",L="l",M="m",N="n",
@@ -162,7 +144,6 @@ local KEY_NAME_CHAR_UPPER = {
     Space=" ",Semicolon=":",Equals="+",Comma="<",Minus="_",Period=">",
     Slash="?",BackQuote="~",LeftBracket="{",BackSlash="|",RightBracket="}",Quote="\"",
 }
--- Integer-based fallback (Windows VK codes, some executors use these)
 local KEY_CHAR = {
     [65]="a",[66]="b",[67]="c",[68]="d",[69]="e",[70]="f",[71]="g",
     [72]="h",[73]="i",[74]="j",[75]="k",[76]="l",[77]="m",[78]="n",
@@ -184,8 +165,6 @@ local KEY_CHAR_UPPER = {
     [191]="?",[192]="~",[219]="{",[220]="|",[221]="}",[222]="\"",
 }
 
--- Resolve a key code to { char, upperChar, isBackspace, isEnter, isShift }
--- Get a canonical string name from any key code format (string, Enum.KeyCode, or integer)
 local function keyToName(code)
     if type(code) == "string" then return code end
     if type(code) ~= "number" then
@@ -198,7 +177,6 @@ local function keyToName(code)
         end
         return nil
     end
-    -- Integer to name mapping
     local INT_TO_NAME = {
         [8]="Backspace",[13]="Return",[32]="Space",
         [160]="LeftShift",[161]="RightShift",[162]="LeftControl",[163]="RightControl",
@@ -213,7 +191,6 @@ local function keyToName(code)
     return INT_TO_NAME[code]
 end
 
--- Resolve a key code to { char, upperChar, isBackspace, isEnter, isShift }
 local function resolveKey(code)
     local name = keyToName(code)
     if name then
@@ -223,7 +200,6 @@ local function resolveKey(code)
         local c = KEY_NAME_CHAR[name]
         if c then return { char = c, upperChar = KEY_NAME_CHAR_UPPER[name] } end
     end
-    -- Integer fallback for Roblox enum values (97-122 = a-z)
     if type(code) == "number" then
         if code >= 97 and code <= 122 then
             local letter = string.char(code)
@@ -239,9 +215,6 @@ local function resolveKey(code)
     return nil
 end
 
-----------------------------------------------------------------
--- DRAWING LAYER
-----------------------------------------------------------------
 
 local REFRESH_KEYS = {"Text","Size","Position","Color","Font","Filled","Thickness","ZIndex","Radius","PointA","PointB","PointC","Transparency"}
 
@@ -283,9 +256,6 @@ local function bulkVisible(list, vis)
     end
 end
 
-----------------------------------------------------------------
--- INPUT
-----------------------------------------------------------------
 
 local mouse = { x = 0, y = 0, down = false, prev = false, rightDown = false, rightPrev = false, keys = {} }
 
@@ -316,9 +286,7 @@ local function isKeyHeld(code)
     if code == nil then return false end
     local codeName = keyToName(code)
     for _, k in ipairs(mouse.keys) do
-        -- Direct equality
         if k == code then return true end
-        -- Name-based comparison (handles string/Enum/int cross-type)
         if codeName then
             local kName = keyToName(k)
             if kName and kName == codeName then return true end
@@ -334,9 +302,6 @@ local function isShiftHeld()
     return false
 end
 
-----------------------------------------------------------------
--- ANIMATION ENGINE
-----------------------------------------------------------------
 
 local activeAnims = {}
 
@@ -375,9 +340,6 @@ local function tickAnims()
     end
 end
 
-----------------------------------------------------------------
--- LIBRARY ROOT
-----------------------------------------------------------------
 
 local Lib = {
     Windows          = {},
@@ -404,11 +366,7 @@ pcall(function()
     if not isfolder(LAYOUT.configSub) then makefolder(LAYOUT.configSub) end
 end)
 
-----------------------------------------------------------------
--- CONFIG SYSTEM
-----------------------------------------------------------------
 
--- Simple JSON encoder fallback
 local function simpleJSONEncode(tbl)
     local result = "{"
     local first = true
@@ -432,7 +390,6 @@ local function simpleJSONEncode(tbl)
 end
 
 local function simpleJSONDecode(str)
-    -- Very basic JSON parser - won't handle all cases but works for simple configs
     local result = {}
     for k, v in str:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
         result[k] = v
@@ -450,7 +407,6 @@ local function simpleJSONDecode(str)
 end
 
 function Lib:GetConfig()
-    -- Use simple key=value format (more reliable than JSON)
     local lines = {}
     for k, v in pairs(self.Flags) do
         local t = type(v)
@@ -460,12 +416,10 @@ function Lib:GetConfig()
         elseif t == "number" or t == "boolean" then
             value = tostring(v)
         elseif t == "table" then
-            -- Color3
             if type(v.R) == "number" and type(v.G) == "number" and type(v.B) == "number" then
                 value = v.R .. "," .. v.G .. "," .. v.B
             end
         else
-            -- Store keybinds as string names
             value = keyToName(v) or tostring(v)
         end
         if value then
@@ -480,7 +434,6 @@ function Lib:LoadConfig(content)
     for line in content:gmatch("[^\n]+") do
         local key, value = line:match("([^=]+)=(.+)")
         if key and value then
-            -- Parse value types
             if value == "true" then
                 data[key] = true
             elseif value == "false" then
@@ -490,11 +443,9 @@ function Lib:LoadConfig(content)
             elseif tonumber(value) then
                 data[key] = tonumber(value)
             elseif value:match("^%d+%.?%d*,%d+%.?%d*,%d+%.?%d*$") then
-                -- Color3
                 local r, g, b = value:match("([^,]+),([^,]+),([^,]+)")
                 data[key] = Color3.fromRGB(tonumber(r) or 255, tonumber(g) or 255, tonumber(b) or 255)
             else
-                -- String (including keybind names)
                 data[key] = value
             end
         end
@@ -569,9 +520,6 @@ function Lib:Init()
     end)
 end
 
-----------------------------------------------------------------
--- NOTIFICATIONS (right side, slide in, progress bar)
-----------------------------------------------------------------
 
 local function tickNotifications(lib)
     local now = clk()
@@ -644,9 +592,6 @@ function Lib:Notify(message, duration, color)
     self._notifList[#self._notifList + 1] = n
 end
 
-----------------------------------------------------------------
--- WATERMARK (bracket style: [ name ])
-----------------------------------------------------------------
 
 function Lib:Watermark(opts)
     local txt = opts.Text or "SevereUI"
@@ -673,7 +618,6 @@ function Lib:Watermark(opts)
         setProp(self2.drawings.bgOuter, "Size", Vector2.new(tw, 20))
         setProp(self2.drawings.bgInner, "Position", Vector2.new(px + 1, py + 1))
         setProp(self2.drawings.bgInner, "Size", Vector2.new(tw - 2, 18))
-        -- Center text in the box
         setProp(self2.drawings.nameTx, "Position", Vector2.new(px + tw / 2, py + 3))
     end
 
@@ -691,12 +635,10 @@ function Lib:Watermark(opts)
 
     function wm:update()
         repos(self, Lib)
-        -- Rainbow name text effect
         if self._rainbowEnabled then
             local now = clk()
             self._rainHue = (self._rainHue + (now - self._lastT) * 0.3) % 1
             self._lastT = now
-            -- Cycle through hue for accent-like rainbow
             local h = self._rainHue
             local r = math.sin(h * 2 * math.pi + 0) * 0.5 + 0.5
             local g = math.sin(h * 2 * math.pi + 2) * 0.5 + 0.5
@@ -709,15 +651,11 @@ function Lib:Watermark(opts)
     return wm
 end
 
-----------------------------------------------------------------
--- KEYBIND OVERLAY WINDOW (floating keybinds list)
-----------------------------------------------------------------
 
 local function tickKeybindOverlay(lib)
     if not lib._keybindOverlay then return end
     local ov = lib._keybindOverlay
 
-    -- Hide everything if disabled
     if not lib._kbOverlayEnabled then
         bulkVisible(ov.drawings, false)
         for _, d in ipairs(ov.entryDrawings) do removeObj(d) end
@@ -725,7 +663,6 @@ local function tickKeybindOverlay(lib)
         return
     end
 
-    -- Collect all keybinds (skip hidden ones and Always mode)
     local allBinds = {}
     for _, kb in ipairs(lib._keybinds) do
         if kb.key and not kb._hideFromOverlay then
@@ -738,10 +675,8 @@ local function tickKeybindOverlay(lib)
                 allBinds[#allBinds + 1] = { name = name, key = keyStr, active = active }
             elseif kb.mode == "Hold" then
                 active = kb:isBoundKeyHeld()
-                -- Always show Hold keybinds, grey when not held
                 allBinds[#allBinds + 1] = { name = name, key = keyStr, active = active }
             end
-            -- Always mode keybinds are not shown in overlay
         end
     end
 
@@ -750,7 +685,6 @@ local function tickKeybindOverlay(lib)
     local titleH = 16
     local sepGap = 3
     local pad = 4
-    -- Compute width from longest entry
     local maxTW = textWidth("keybinds") + 12
     for _, entry in ipairs(allBinds) do
         local tw = textWidth("(" .. entry.key .. ") " .. entry.name) + 12
@@ -760,7 +694,6 @@ local function tickKeybindOverlay(lib)
     local contentH = #allBinds * lineH
     local totalH = titleH + sepGap + contentH + pad
 
-    -- Remove old entry drawings
     for _, d in ipairs(ov.entryDrawings) do removeObj(d) end
     ov.entryDrawings = {}
 
@@ -776,7 +709,6 @@ local function tickKeybindOverlay(lib)
         setProp(ov.drawings.sepLine, "Position", Vector2.new(x + pad, y + titleH))
         setProp(ov.drawings.sepLine, "Size", Vector2.new(boxW - pad * 2, 1))
 
-        -- Draw entries centered, gray when off
         local ly = y + titleH + sepGap
         for _, entry in ipairs(allBinds) do
             local t = "(" .. entry.key .. ") " .. entry.name
@@ -791,7 +723,6 @@ local function tickKeybindOverlay(lib)
         bulkVisible(ov.drawings, false)
     end
 
-    -- Drag handling (only when UI is shown)
     if hasItems and lib._shown then
         local x, y = ov.x, ov.y
         if inRect(mouse.x, mouse.y, x, y, boxW, titleH) and justClicked() then
@@ -820,7 +751,6 @@ local function createKeybindOverlay(lib)
         drawings = {},
         entryDrawings = {},
     }
-    -- Simple 2-layer border: outer dark + inner bg (no list bg box, no extra layers)
     ov.drawings.bgOuter = makeObj("Square", { Size = Vector2.new(90, 30), Position = Vector2.new(30, 30), Color = COLORS.surface, Filled = true, Visible = false, ZIndex = 179 })
     ov.drawings.bgInner = makeObj("Square", { Size = Vector2.new(88, 28), Position = Vector2.new(31, 31), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 180 })
     ov.drawings.titleTx = makeObj("Text", { Text = "keybinds", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(75, 32), Center = true, Visible = false, ZIndex = 182 })
@@ -829,9 +759,6 @@ local function createKeybindOverlay(lib)
     lib._keybindOverlay = ov
 end
 
-----------------------------------------------------------------
--- WINDOW (multi-layered nested borders, Thug Sense style)
-----------------------------------------------------------------
 
 function Lib:Window(opts)
     local w, h = opts.Size and opts.Size.X or 560, opts.Size and opts.Size.Y or 450
@@ -852,20 +779,15 @@ function Lib:Window(opts)
         _tabAnimWidth = 0,
     }
 
-    -- Title text above the layered border (like Thug Sense)
     win.drawings.titleTx = makeObj("Text", { Text = opts.Name or "Window", Size = LAYOUT.titleFont, Font = LAYOUT.font, Color = COLORS.textSec, Position = Vector2.new(x + 10, y - 16), Visible = true, ZIndex = 1 })
-    -- Multi-layered borders (5 layers: dark -> outer -> secbg -> outer -> bg)
     win.drawings.layer1 = makeObj("Square", { Size = Vector2.new(w, h), Position = Vector2.new(x, y), Color = COLORS.dark, Filled = true, Visible = true, ZIndex = 1 })
     win.drawings.layer2 = makeObj("Square", { Size = Vector2.new(w - 2, h - 2), Position = Vector2.new(x + 1, y + 1), Color = COLORS.outer, Filled = true, Visible = true, ZIndex = 2 })
     win.drawings.layer3 = makeObj("Square", { Size = Vector2.new(w - 4, h - 4), Position = Vector2.new(x + 2, y + 2), Color = COLORS.surface, Filled = true, Visible = true, ZIndex = 3 })
     win.drawings.layer4 = makeObj("Square", { Size = Vector2.new(w - 6, h - 6), Position = Vector2.new(x + 3, y + 3), Color = COLORS.outer, Filled = true, Visible = true, ZIndex = 4 })
     win.drawings.layer5 = makeObj("Square", { Size = Vector2.new(w - 8, h - 8), Position = Vector2.new(x + 4, y + 4), Color = COLORS.bg, Filled = true, Visible = true, ZIndex = 5 })
-    -- Accent underline for tabs (animated)
     win.drawings.tabLine = makeObj("Square", { Size = Vector2.new(80, 3), Position = Vector2.new(x + 14, y + 4 + LAYOUT.tabH + 2), Color = COLORS.accent, Filled = true, Visible = true, ZIndex = 8 })
-    -- Content area (inside border, below tabs)
     local cY = y + 4 + LAYOUT.tabH + 6
     local cH = h - (LAYOUT.tabH + 14)
-    -- Content area multi-layer border
     win.drawings.contentLayer1 = makeObj("Square", { Size = Vector2.new(w - 20, cH), Position = Vector2.new(x + 10, cY), Color = COLORS.dark, Filled = true, Visible = true, ZIndex = 5 })
     win.drawings.contentLayer2 = makeObj("Square", { Size = Vector2.new(w - 22, cH - 2), Position = Vector2.new(x + 11, cY + 1), Color = COLORS.outer, Filled = true, Visible = true, ZIndex = 6 })
     win.drawings.contentLayer3 = makeObj("Square", { Size = Vector2.new(w - 24, cH - 4), Position = Vector2.new(x + 12, cY + 2), Color = COLORS.surface, Filled = true, Visible = true, ZIndex = 7 })
@@ -908,12 +830,10 @@ function Lib:Window(opts)
         setProp(self.drawings.contentLayer4, "Size", Vector2.new(w - 26, cH - 6))
         setProp(self.drawings.contentLayer5, "Position", Vector2.new(x + 14, cY + 4))
         setProp(self.drawings.contentLayer5, "Size", Vector2.new(w - 28, cH - 8))
-        -- Tab underline repositioned by tab update
         for _, pg in ipairs(self.pages) do pg:reposition() end
     end
 
     function win:update()
-        -- Drag from top area of window
         local inTitle = inRect(mouse.x, mouse.y, self.x, self.y, self.w, LAYOUT.tabH + 6)
 
         if inTitle and justClicked() then
@@ -931,7 +851,6 @@ function Lib:Window(opts)
             end
         end
 
-        -- Tab animation
         if self._tabAnimActive then
             local now = clk()
             local el = now - self._tabAnimStart
@@ -940,7 +859,6 @@ function Lib:Window(opts)
             if p >= 1 then self._tabAnimActive = false end
         end
 
-        -- Tab clicks
         local numTabs = #self.pages
         if numTabs > 0 then
             local tabAreaW = self.w - 28
@@ -956,7 +874,6 @@ function Lib:Window(opts)
                 elseif hov then
                     setProp(pg.drawings.tabTxt, "Color", COLORS.text)
                     if justClicked() then
-                        -- Animate underline
                         self._tabAnimActive = true
                         self._tabAnimStart = clk()
                         self._tabAnimFrom = self._tabAnimNow
@@ -972,7 +889,6 @@ function Lib:Window(opts)
                 end
             end
 
-            -- Update tab underline position
             if not self._tabAnimActive and self.currentPage then
                 for i, pg in ipairs(self.pages) do
                     if pg == self.currentPage then
@@ -1008,9 +924,6 @@ function Lib:Window(opts)
     return win
 end
 
-----------------------------------------------------------------
--- PAGE (tab with centered text, animated underline)
-----------------------------------------------------------------
 
 function Lib:_makePage(win, opts)
     local idx = #win.pages + 1
@@ -1026,13 +939,12 @@ function Lib:_makePage(win, opts)
     }
     for c = 1, pg.columns do pg.colStack[c] = 0 end
 
-    local numTabs = idx  -- will grow, but initial positioning
+    local numTabs = idx
     local tabAreaW = win.w - 28
     local tw = floor(tabAreaW / max(1, idx))
     local tx = win.x + 14 + (idx - 1) * tw
     local ty = win.y + 4
 
-    -- Tab text (centered in tab area)
     pg.drawings.tabTxt = makeObj("Text", { Text = pg.label, Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.tabInact, Center = true, Position = Vector2.new(tx + tw / 2, ty + (LAYOUT.tabH - LAYOUT.fontSize) / 2), Visible = true, ZIndex = 10 })
 
     function pg:reposition()
@@ -1064,13 +976,11 @@ function Lib:_makePage(win, opts)
 
     win.pages[#win.pages + 1] = pg
 
-    -- Reposition all tabs when a new one is added
     for _, p in ipairs(win.pages) do p:reposition() end
 
     if idx == 1 then
         win.currentPage = pg
         pg:activate(true)
-        -- Initialize tab underline
         local tabAreaW2 = win.w - 28
         local tw2 = floor(tabAreaW2 / 1)
         win._tabAnimNow = win.x + 14 + 4
@@ -1079,9 +989,6 @@ function Lib:_makePage(win, opts)
     return pg
 end
 
-----------------------------------------------------------------
--- SECTION (nested dark borders with centered header)
-----------------------------------------------------------------
 
 function Lib:_makeSection(page, opts)
     local col = opts.Side or 1
@@ -1102,11 +1009,9 @@ function Lib:_makeSection(page, opts)
         drawings = {},
     }
 
-    -- Nested section borders (dark -> secbg -> bg)
     sec.drawings.border1 = makeObj("Square", { Size = Vector2.new(innerW, sec.totalH), Position = Vector2.new(sx, sy), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 10 })
     sec.drawings.border2 = makeObj("Square", { Size = Vector2.new(innerW - 2, sec.totalH - 2), Position = Vector2.new(sx + 1, sy + 1), Color = COLORS.surface, Filled = true, Visible = false, ZIndex = 11 })
     sec.drawings.inner = makeObj("Square", { Size = Vector2.new(innerW - 4, sec.totalH - 4), Position = Vector2.new(sx + 2, sy + 2), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 12 })
-    -- Header text centered
     sec.drawings.title = makeObj("Text", { Text = opts.Name or "Section", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Center = true, Position = Vector2.new(sx + innerW / 2, sy + 6), Visible = false, ZIndex = 14 })
 
     function sec:recalcHeight()
@@ -1163,7 +1068,6 @@ function Lib:_makeSection(page, opts)
         self.elements[#self.elements + 1] = el
         self.nextElemY = self.nextElemY + (el.height or LAYOUT.rowH) + LAYOUT.rowGap
         self:recalcHeight()
-        -- If this section's page is active, make the new element visible
         if self.page.isActive and el.setVisible then
             el:setVisible(true)
         end
@@ -1196,16 +1100,12 @@ function Lib:_makeSection(page, opts)
     page.sections[#page.sections + 1] = sec
     page.colStack[col] = page.colStack[col] + sec.totalH + LAYOUT.secGap
 
-    -- If this page is already active, make the new section visible
     if page.isActive then
         sec:setVisible(true)
     end
     return sec
 end
 
-----------------------------------------------------------------
--- TOGGLE (small square checkbox, Thug Sense style)
-----------------------------------------------------------------
 
 function Lib:_makeToggle(sec, opts)
     local flag = opts.Flag or ("t_" .. clk())
@@ -1222,11 +1122,8 @@ function Lib:_makeToggle(sec, opts)
         drawings = {},
     }
 
-    -- Checkbox outer (dark border)
     el.drawings.cbOuter = makeObj("Square", { Size = Vector2.new(10, 10), Position = Vector2.new(ox + 2, oy + 5), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 16 })
-    -- Checkbox inner (fill)
     el.drawings.cbInner = makeObj("Square", { Size = Vector2.new(8, 8), Position = Vector2.new(ox + 3, oy + 6), Color = el.value and COLORS.accent or COLORS.inactive, Filled = true, Visible = false, ZIndex = 17 })
-    -- Label
     el.drawings.txt = makeObj("Text", { Text = opts.Name or "Toggle", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(ox + 16, oy + 3), Visible = false, ZIndex = 16 })
 
     function el:Set(val)
@@ -1246,7 +1143,6 @@ function Lib:_makeToggle(sec, opts)
     function el:update()
         local ox, oy = self.sec:elemOrigin(self.relY)
         local ew = self.sec:elemWidth()
-        -- Click on checkbox or label
         local cbHov = inRect(mouse.x, mouse.y, ox + 2, oy + 3, 10, 14)
         local txtHov = inRect(mouse.x, mouse.y, ox + 16, oy + 3, textWidth(opts.Name or "Toggle") + 6, 14)
         if (cbHov or txtHov) and justClicked() then
@@ -1267,9 +1163,6 @@ function Lib:_makeToggle(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- LABEL
-----------------------------------------------------------------
 
 function Lib:_makeLabel(sec, opts)
     local relY = sec.nextElemY
@@ -1294,9 +1187,6 @@ function Lib:_makeLabel(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- DIVIDER
-----------------------------------------------------------------
 
 function Lib:_makeDivider(sec, opts)
     local relY = sec.nextElemY
@@ -1323,9 +1213,6 @@ function Lib:_makeDivider(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- BUTTON (dark bordered rectangle, centered text)
-----------------------------------------------------------------
 
 function Lib:_makeButton(sec, opts)
     local relY = sec.nextElemY
@@ -1339,11 +1226,8 @@ function Lib:_makeButton(sec, opts)
         drawings = {},
     }
 
-    -- Outer border
     el.drawings.outer = makeObj("Square", { Size = Vector2.new(ew, 18), Position = Vector2.new(ox, oy + 2), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 14 })
-    -- Inner bg
     el.drawings.inner = makeObj("Square", { Size = Vector2.new(ew - 2, 16), Position = Vector2.new(ox + 1, oy + 3), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 15 })
-    -- Text (Center = true, positioned at horizontal midpoint)
     el.drawings.txt = makeObj("Text", { Text = opts.Name or "Button", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Center = true, Position = Vector2.new(ox + ew / 2, oy + 5), Visible = false, ZIndex = 16 })
 
     function el:reposition()
@@ -1380,9 +1264,6 @@ function Lib:_makeButton(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- SLIDER (minus/plus buttons, track with rect thumb, value below)
-----------------------------------------------------------------
 
 function Lib:_makeSlider(sec, opts)
     local flag = opts.Flag or ("s_" .. clk())
@@ -1413,22 +1294,14 @@ function Lib:_makeSlider(sec, opts)
     local fillW = max(0, trackW * frac)
     local thumbX = trackX + fillW - 2
 
-    -- Title
     el.drawings.title = makeObj("Text", { Text = opts.Name or "Slider", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(ox + 6, oy), Visible = false, ZIndex = 16 })
-    -- Minus button (horizontal line)
     el.drawings.minusBg = makeObj("Square", { Size = Vector2.new(5, 1), Position = Vector2.new(ox + 2, trackY + 3), Color = COLORS.text, Filled = true, Visible = false, ZIndex = 16 })
-    -- Plus button (cross)
     el.drawings.plusH = makeObj("Square", { Size = Vector2.new(5, 1), Position = Vector2.new(ox + ew - 7, trackY + 3), Color = COLORS.text, Filled = true, Visible = false, ZIndex = 16 })
     el.drawings.plusV = makeObj("Square", { Size = Vector2.new(1, 5), Position = Vector2.new(ox + ew - 5, trackY + 1), Color = COLORS.text, Filled = true, Visible = false, ZIndex = 16 })
-    -- Track bg
     el.drawings.trackBg = makeObj("Square", { Size = Vector2.new(trackW, LAYOUT.sliderH), Position = Vector2.new(trackX, trackY), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 14 })
-    -- Track inactive fill
     el.drawings.trackInactive = makeObj("Square", { Size = Vector2.new(trackW - 2, LAYOUT.sliderH - 2), Position = Vector2.new(trackX + 1, trackY + 1), Color = COLORS.inactive, Filled = true, Visible = false, ZIndex = 15 })
-    -- Track active fill
     el.drawings.trackFill = makeObj("Square", { Size = Vector2.new(max(0, fillW), LAYOUT.sliderH - 2), Position = Vector2.new(trackX + 1, trackY + 1), Color = COLORS.accent, Filled = true, Visible = false, ZIndex = 16 })
-    -- Thumb (rectangular, 4px wide, slightly taller than track)
     el.drawings.thumb = makeObj("Square", { Size = Vector2.new(4, LAYOUT.sliderH + 2), Position = Vector2.new(thumbX, trackY - 1), Color = COLORS.accent, Filled = true, Visible = false, ZIndex = 17 })
-    -- Value text centered below
     el.drawings.valTx = makeObj("Text", { Text = valStr, Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Center = true, Position = Vector2.new(trackX + trackW / 2, oy + 26), Visible = false, ZIndex = 16 })
 
     function el:Set(val)
@@ -1483,18 +1356,15 @@ function Lib:_makeSlider(sec, opts)
         local trackW = ew - 40
         local trackY = oy + 18
 
-        -- Minus button click
         if justClicked() and inRect(mouse.x, mouse.y, ox, trackY - 2, 14, 10) then
             self:Set(self.value - 1)
             safeCall(self.callback, self.value)
         end
-        -- Plus button click
         if justClicked() and inRect(mouse.x, mouse.y, ox + ew - 14, trackY - 2, 14, 10) then
             self:Set(self.value + 1)
             safeCall(self.callback, self.value)
         end
 
-        -- Track drag
         if justClicked() and inRect(mouse.x, mouse.y, trackX, trackY - 2, trackW, LAYOUT.sliderH + 4) then
             self.sliding = true
         end
@@ -1523,9 +1393,6 @@ function Lib:_makeSlider(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- DROPDOWN (dark box with arrow, Thug Sense style)
-----------------------------------------------------------------
 
 function Lib:_makeDropdown(sec, opts)
     local flag = opts.Flag or ("d_" .. clk())
@@ -1545,19 +1412,13 @@ function Lib:_makeDropdown(sec, opts)
         drawings = {},
     }
 
-    -- Label
     el.drawings.label = makeObj("Text", { Text = opts.Name or "Dropdown", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(ox + 6, oy + 1), Visible = false, ZIndex = 16 })
-    -- Dropdown box outer
     local boxY = oy + 14
     el.drawings.boxOuter = makeObj("Square", { Size = Vector2.new(ew, 18), Position = Vector2.new(ox, boxY), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 14 })
-    -- Dropdown box inner
     el.drawings.boxInner = makeObj("Square", { Size = Vector2.new(ew - 2, 16), Position = Vector2.new(ox + 1, boxY + 1), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 15 })
-    -- Selected text
     el.drawings.selTx = makeObj("Text", { Text = el.selected, Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(ox + 6, boxY + 3), Visible = false, ZIndex = 16 })
-    -- Arrow indicator (small triangle made of lines)
     el.drawings.arrowH = makeObj("Square", { Size = Vector2.new(5, 1), Position = Vector2.new(ox + ew - 10, boxY + 9), Color = COLORS.text, Filled = true, Visible = false, ZIndex = 16 })
 
-    -- Options (created as overlay) - lazily created on first expand
     el.optDrawingsCreated = false
 
     function el:Set(val)
@@ -1570,7 +1431,6 @@ function Lib:_makeDropdown(sec, opts)
     function el:showOptions(show)
         self.expanded = show
 
-        -- Create option drawings on first show
         if show and not self.optDrawingsCreated then
             self.optDrawingsCreated = true
             local ox, oy = self.sec:elemOrigin(self.relY)
@@ -1620,7 +1480,6 @@ function Lib:_makeDropdown(sec, opts)
         setProp(self.drawings.selTx, "Position", Vector2.new(ox + 6, boxY + 3))
         setProp(self.drawings.arrowH, "Position", Vector2.new(ox + ew - 10, boxY + 9))
 
-        -- Only reposition option drawings if they've been created
         if self.optDrawingsCreated then
             for i, od in ipairs(self.optDrawings) do
                 local optY = boxY + 18 + (i - 1) * 15
@@ -1701,9 +1560,6 @@ function Lib:_makeDropdown(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- COLORPICKER (square preview + panel)
-----------------------------------------------------------------
 
 function Lib:_makeColorpicker(sec, opts)
     local flag = opts.Flag or ("c_" .. clk())
@@ -1729,15 +1585,12 @@ function Lib:_makeColorpicker(sec, opts)
         hueCells = {},
     }
 
-    -- Preview row
     el.drawings.label = makeObj("Text", { Text = opts.Name or "Color", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(ox + 6, oy + (LAYOUT.rowH - LAYOUT.fontSize) / 2), Visible = false, ZIndex = 16 })
-    -- Square color preview (right-aligned)
     local prevX = ox + ew - 18
     local prevY = oy + 3
     el.drawings.prevOuter = makeObj("Square", { Size = Vector2.new(14, 14), Position = Vector2.new(prevX, prevY), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 16 })
     el.drawings.prevInner = makeObj("Square", { Size = Vector2.new(12, 12), Position = Vector2.new(prevX + 1, prevY + 1), Color = defaultColor, Filled = true, Visible = false, ZIndex = 17 })
 
-    -- Panel
     local SV_SZ = 150
     local HUE_W = 14
     local GRID = 18
@@ -1750,17 +1603,14 @@ function Lib:_makeColorpicker(sec, opts)
     el.drawings.panelBg  = makeObj("Square", { Size = Vector2.new(panelW, panelH), Position = Vector2.new(panelX, panelY), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 160 })
     el.drawings.panelInner = makeObj("Square", { Size = Vector2.new(panelW - 2, panelH - 2), Position = Vector2.new(panelX + 1, panelY + 1), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 161 })
 
-    -- SV grid border
     local svX = panelX + 8
     local svY = panelY + 8
     el.drawings.svBdr = makeObj("Square", { Size = Vector2.new(SV_SZ + 2, SV_SZ + 2), Position = Vector2.new(svX - 1, svY - 1), Color = COLORS.dark, Filled = false, Thickness = 1, Visible = false, ZIndex = 161 })
 
-    -- Hue bar border
     local hueX = svX + SV_SZ + 8
     local hueY = svY
     el.drawings.hueBdr = makeObj("Square", { Size = Vector2.new(HUE_W + 2, SV_SZ + 2), Position = Vector2.new(hueX - 1, hueY - 1), Color = COLORS.dark, Filled = false, Thickness = 1, Visible = false, ZIndex = 161 })
 
-    -- SV cells (18x18)
     for row = 0, GRID - 1 do
         for col = 0, GRID - 1 do
             local s = col / (GRID - 1)
@@ -1771,20 +1621,17 @@ function Lib:_makeColorpicker(sec, opts)
         end
     end
 
-    -- Hue cells (18 vertical)
     for i = 0, GRID - 1 do
         local hh = i / (GRID - 1)
         local cell = makeObj("Square", { Size = Vector2.new(HUE_W, cellSz + 1), Position = Vector2.new(hueX, hueY + i * cellSz), Color = hsvToC3(hh, 1, 1), Filled = true, Visible = false, ZIndex = 162 })
         el.hueCells[#el.hueCells + 1] = cell
     end
 
-    -- SV cursor
     local curSX = svX + el.sat * SV_SZ
     local curSY = svY + (1 - el.val) * SV_SZ
     el.drawings.svCursor  = makeObj("Circle", { Radius = 4, Position = Vector2.new(curSX, curSY), Color = Color3.new(1, 1, 1), Filled = false, Thickness = 2, Visible = false, ZIndex = 165 })
     el.drawings.svCursorB = makeObj("Circle", { Radius = 5, Position = Vector2.new(curSX, curSY), Color = Color3.new(0, 0, 0), Filled = false, Thickness = 1, Visible = false, ZIndex = 164 })
 
-    -- Hue arrow
     local hueArrowY = hueY + el.hue * SV_SZ
     el.drawings.hueArrow = makeObj("Square", { Size = Vector2.new(HUE_W + 4, 2), Position = Vector2.new(hueX - 2, hueArrowY), Color = Color3.new(1, 1, 1), Filled = true, Visible = false, ZIndex = 165 })
 
@@ -1954,9 +1801,6 @@ function Lib:_makeColorpicker(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- KEYBIND ([KEY] pill style, Thug Sense)
-----------------------------------------------------------------
 
 function Lib:_makeKeybind(sec, opts)
     local flag = opts.Flag or ("k_" .. clk())
@@ -1990,18 +1834,14 @@ function Lib:_makeKeybind(sec, opts)
     local keyName = keyDisplayName(el.key)
     local keyStr = "[" .. keyName .. "]"
 
-    -- Label
     el.drawings.label = makeObj("Text", { Text = opts.Name or "Keybind", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(ox + 6, oy + (LAYOUT.rowH - LAYOUT.fontSize) / 2), Visible = false, ZIndex = 16 })
-    -- Key pill bg
     local keyW = textWidth(keyStr) + 6
     local keyX = ox + ew - keyW - 8
     local keyY = oy + (LAYOUT.rowH - 12) / 2
     el.drawings.keyBgOuter = makeObj("Square", { Size = Vector2.new(keyW + 4, 12), Position = Vector2.new(keyX - 2, keyY), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 14 })
     el.drawings.keyBgInner = makeObj("Square", { Size = Vector2.new(keyW + 2, 10), Position = Vector2.new(keyX - 1, keyY + 1), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 15 })
-    -- Key text
     el.drawings.keyTx = makeObj("Text", { Text = keyStr, Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.text, Position = Vector2.new(keyX + 1, keyY), Visible = false, ZIndex = 16 })
 
-    -- Mode dropdown (right-click menu) - lazily created on first show
     el.modeOptions = {"Hold", "Toggle", "Always"}
     el.modeDropdownCreated = false
 
@@ -2019,7 +1859,6 @@ function Lib:_makeKeybind(sec, opts)
             local dropH = 15
             local dropStartY = oy + LAYOUT.rowH
 
-            -- Create mode dropdown elements on first show
             if not self.modeDropdownCreated then
                 self.modeDropdownCreated = true
 
@@ -2036,11 +1875,9 @@ function Lib:_makeKeybind(sec, opts)
                     end
                     self.modeDrawings[i] = md
                 end
-                -- Bottom border
                 local totalDropH = #self.modeOptions * dropH
                 self.drawings.modeBotBdr = makeObj("Square", { Size = Vector2.new(dropW, 1), Position = Vector2.new(keyX, dropStartY + totalDropH), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 201 })
             else
-                -- Update positions if already created
                 for i, md in ipairs(self.modeDrawings) do
                     local dropY = dropStartY + (i - 1) * dropH
                     setProp(md.bg, "Position", Vector2.new(keyX, dropY))
@@ -2079,7 +1916,6 @@ function Lib:_makeKeybind(sec, opts)
         self._keyName = keyToName(code)
         Lib.Flags[self.flag] = code
         print("[SevereUI] Keybind", self._label, "set to:", keyDisplayName(code), "(code:", code, "name:", self._keyName, ")")
-        -- Update visual
         local dname = keyDisplayName(code)
         local keyStr = "[" .. dname .. "]"
         local ox, oy = self.sec:elemOrigin(self.relY)
@@ -2095,19 +1931,16 @@ function Lib:_makeKeybind(sec, opts)
         setProp(self.drawings.keyBgInner, "Size", Vector2.new(keyW + 2, 10))
     end
 
-    -- Reliable key held check using stored name
     function el:isBoundKeyHeld()
         if not self.key then return false end
         local boundName = self._keyName or keyToName(self.key)
         for _, k in ipairs(mouse.keys) do
             if k == self.key then
-                -- print("[SevereUI]", self._label, "detected by code match:", k, "==", self.key)
                 return true
             end
             if boundName then
                 local kName = keyToName(k)
                 if kName and kName == boundName then
-                    -- print("[SevereUI]", self._label, "detected by name match:", kName, "==", boundName)
                     return true
                 end
             end
@@ -2130,7 +1963,6 @@ function Lib:_makeKeybind(sec, opts)
         setProp(self.drawings.keyBgOuter, "Size", Vector2.new(keyW + 4, 12))
         setProp(self.drawings.keyBgInner, "Position", Vector2.new(keyX - 1, keyY + 1))
         setProp(self.drawings.keyBgInner, "Size", Vector2.new(keyW + 2, 10))
-        -- Reposition mode dropdown (only if created)
         if self.modeDropdownCreated then
             local dropW = 60
             local dropH = 15
@@ -2148,7 +1980,6 @@ function Lib:_makeKeybind(sec, opts)
                 end
             end
 
-            -- Reposition bottom border
             if self.drawings.modeBotBdr then
                 setProp(self.drawings.modeBotBdr, "Position", Vector2.new(keyX, dropStartY + totalDropH))
             end
@@ -2170,7 +2001,6 @@ function Lib:_makeKeybind(sec, opts)
             local pColor = lerpC3(COLORS.text, COLORS.accent, pulse)
             setProp(self.drawings.keyTx, "Color", pColor)
             setProp(self.drawings.keyTx, "Text", "[...]")
-            -- Reposition for "..." text
             local dotW = textWidth("[...]") + 6
             local dotX = ox + ew - dotW - 8
             setProp(self.drawings.keyTx, "Position", Vector2.new(dotX + 1, keyY))
@@ -2194,12 +2024,10 @@ function Lib:_makeKeybind(sec, opts)
                 self._mouseWait = true
             end
 
-            -- Right-click to open mode dropdown (only if not hidden)
             if not self._hideModeSelector and hov and justRightClicked() then
                 if self._modeDropdownOpen then
                     self:showModeDropdown(false)
                 else
-                    -- Close other open elements
                     if Lib._openDropdown then
                         Lib._openDropdown:showOptions(false)
                     end
@@ -2213,7 +2041,6 @@ function Lib:_makeKeybind(sec, opts)
                 end
             end
 
-            -- Handle mode dropdown interactions
             if self._modeDropdownOpen then
                 local modeOptions = {"Hold", "Toggle", "Always"}
                 local dropW = 60
@@ -2222,7 +2049,6 @@ function Lib:_makeKeybind(sec, opts)
                 local dropStartY = oy + LAYOUT.rowH
                 local clicked = false
 
-                -- Update bottom border position
                 setProp(self.drawings.modeBotBdr, "Position", Vector2.new(keyX, dropStartY + totalDropH))
 
                 for i, modeName in ipairs(modeOptions) do
@@ -2230,7 +2056,6 @@ function Lib:_makeKeybind(sec, opts)
                     local dropHov = inRect(mouse.x, mouse.y, keyX, dropY, dropW, dropH)
                     local isSelected = (self.mode == modeName)
 
-                    -- Update positions
                     setProp(self.modeDrawings[i].bg, "Position", Vector2.new(keyX, dropY))
                     setProp(self.modeDrawings[i].txt, "Position", Vector2.new(keyX + 4, dropY + 1))
                     setProp(self.modeDrawings[i].leftBdr, "Position", Vector2.new(keyX - 1, dropY))
@@ -2239,13 +2064,11 @@ function Lib:_makeKeybind(sec, opts)
                         setProp(self.modeDrawings[i].topBdr, "Position", Vector2.new(keyX, dropY - 1))
                     end
 
-                    -- Selected mode gets accent color text only
                     if isSelected or dropHov then
                         setProp(self.modeDrawings[i].txt, "Color", COLORS.accent)
                     else
                         setProp(self.modeDrawings[i].txt, "Color", COLORS.text)
                     end
-                    -- Background stays same for all
                     setProp(self.modeDrawings[i].bg, "Color", COLORS.bg)
 
                     if dropHov and justClicked() then
@@ -2255,7 +2078,6 @@ function Lib:_makeKeybind(sec, opts)
                         break
                     end
                 end
-                -- Click outside to close
                 if not clicked and justClicked() then
                     local dropdownArea = inRect(mouse.x, mouse.y, keyX, dropStartY, dropW, totalDropH)
                     if not dropdownArea then
@@ -2264,14 +2086,12 @@ function Lib:_makeKeybind(sec, opts)
                 end
             end
 
-            -- Key polling is now handled globally in StartUpdateLoop, not here
 
         elseif self.phase == "picking" then
             if self._mouseWait then
                 if not isHeld() then self._mouseWait = false end
                 return
             end
-            -- Skip mouse buttons and unknown keys
             local skipNames = {
                 Unknown=true, MouseButton1=true, MouseButton2=true, MouseButton3=true,
                 LeftMouse=true, RightMouse=true, MiddleMouse=true,
@@ -2338,9 +2158,6 @@ function Lib:_makeKeybind(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- TEXTBOX (dark box input, Thug Sense style)
-----------------------------------------------------------------
 
 function Lib:_makeTextbox(sec, opts)
     local flag = opts.Flag or ("x_" .. clk())
@@ -2371,15 +2188,10 @@ function Lib:_makeTextbox(sec, opts)
     local displayText = el.val ~= "" and el.val or el.placeholder
     local textColor = el.val ~= "" and COLORS.text or COLORS.dim
 
-    -- Title inline (left of input)
     el.drawings.title = makeObj("Text", { Text = opts.Name or "Input", Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = COLORS.textSec, Position = Vector2.new(ox + 6, oy + (boxH - LAYOUT.fontSize) / 2), Visible = false, ZIndex = 15 })
-    -- Input box outer
     el.drawings.boxOuter = makeObj("Square", { Size = Vector2.new(inputW, LAYOUT.rowH), Position = Vector2.new(inputX, oy + 5), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 14 })
-    -- Input box inner
     el.drawings.boxInner = makeObj("Square", { Size = Vector2.new(inputW - 2, LAYOUT.rowH - 2), Position = Vector2.new(inputX + 1, oy + 6), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 15 })
-    -- Text
     el.drawings.txt = makeObj("Text", { Text = displayText, Size = LAYOUT.fontSize, Font = LAYOUT.font, Color = textColor, Position = Vector2.new(inputX + 6, oy + 5 + (LAYOUT.rowH - LAYOUT.fontSize) / 2), Visible = false, ZIndex = 16 })
-    -- Cursor line
     local cursorX = inputX + 6 + textWidth(el.val)
     local cursorY = oy + 8
     el.drawings.cursor = makeObj("Square", { Size = Vector2.new(1, LAYOUT.fontSize), Position = Vector2.new(cursorX, cursorY), Color = COLORS.accent, Filled = true, Visible = false, ZIndex = 17 })
@@ -2430,7 +2242,6 @@ function Lib:_makeTextbox(sec, opts)
             end
         end
 
-        -- Cursor blink
         if self.active then
             if clk() - self.cursorBlink > 0.5 then
                 self.cursorVisible = not self.cursorVisible
@@ -2441,7 +2252,6 @@ function Lib:_makeTextbox(sec, opts)
             setVisible(self.drawings.cursor, false)
         end
 
-        -- Key input
         if self.active then
             local pressedNow = mouse.keys
             local shift = isShiftHeld()
@@ -2489,9 +2299,6 @@ function Lib:_makeTextbox(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- LISTBOX (scrollable list with selectable items)
-----------------------------------------------------------------
 
 function Lib:_makeListbox(sec, opts)
     local flag = opts.Flag or ("lb_" .. clk())
@@ -2519,11 +2326,9 @@ function Lib:_makeListbox(sec, opts)
         itemDrawings = {},
     }
 
-    -- Box border
     el.drawings.boxOuter = makeObj("Square", { Size = Vector2.new(ew, boxH), Position = Vector2.new(ox, oy), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 14 })
     el.drawings.boxInner = makeObj("Square", { Size = Vector2.new(ew - 2, boxH - 2), Position = Vector2.new(ox + 1, oy + 1), Color = COLORS.bg, Filled = true, Visible = false, ZIndex = 15 })
 
-    -- Pre-create row drawings for visible rows
     for i = 1, rows do
         local ry = oy + 2 + (i - 1) * lineH
         local rd = {
@@ -2533,16 +2338,13 @@ function Lib:_makeListbox(sec, opts)
         el.itemDrawings[i] = rd
     end
 
-    -- Scrollbar track
     el.drawings.scrollTrack = makeObj("Square", { Size = Vector2.new(3, boxH - 4), Position = Vector2.new(ox + ew - 6, oy + 2), Color = COLORS.dark, Filled = true, Visible = false, ZIndex = 16 })
-    -- Scrollbar thumb
     el.drawings.scrollThumb = makeObj("Square", { Size = Vector2.new(3, 20), Position = Vector2.new(ox + ew - 6, oy + 2), Color = COLORS.accent, Filled = true, Visible = false, ZIndex = 17 })
 
     function el:SetItems(items)
         self.items = items
         self.maxScroll = max(0, #items - self.rows)
         self.scroll = clamp(self.scroll, 0, self.maxScroll)
-        -- Clear selection if it no longer exists
         if self.selected then
             local found = false
             for _, it in ipairs(items) do
@@ -2582,7 +2384,6 @@ function Lib:_makeListbox(sec, opts)
         self.maxScroll = max(0, #self.items - self.rows)
         self.scroll = clamp(self.scroll, 0, self.maxScroll)
 
-        -- Update visible rows
         for i = 1, self.rows do
             local idx = self.scroll + i
             local rd = self.itemDrawings[i]
@@ -2594,7 +2395,7 @@ function Lib:_makeListbox(sec, opts)
                 setProp(rd.txt, "Text", item)
                 setProp(rd.bg, "Color", isSel and COLORS.surface or (hov and COLORS.surface2 or COLORS.bg))
                 setProp(rd.txt, "Color", isSel and COLORS.accent or COLORS.text)
-                setVisible(rd.bg, rd.bg.raw.Visible) -- keep current visibility
+                setVisible(rd.bg, rd.bg.raw.Visible)
                 setVisible(rd.txt, rd.txt.raw.Visible)
 
                 if hov and justClicked() then
@@ -2608,7 +2409,6 @@ function Lib:_makeListbox(sec, opts)
             end
         end
 
-        -- Scrollbar
         if #self.items > self.rows then
             setVisible(self.drawings.scrollTrack, self.drawings.boxOuter.raw.Visible)
             local trackH = self.boxH - 4
@@ -2622,11 +2422,8 @@ function Lib:_makeListbox(sec, opts)
             setVisible(self.drawings.scrollThumb, false)
         end
 
-        -- Scroll with mouse clicks on track area
         if inRect(mouse.x, mouse.y, ox, oy, ew, self.boxH) then
-            -- Simple scroll: right-click or use top/bottom halves
             if justClicked() and inRect(mouse.x, mouse.y, ox + ew - 8, oy, 8, self.boxH) then
-                -- Click on scrollbar area
                 local relY2 = mouse.y - oy
                 if relY2 < self.boxH / 2 then
                     self.scroll = max(0, self.scroll - 1)
@@ -2650,9 +2447,6 @@ function Lib:_makeListbox(sec, opts)
     return el
 end
 
-----------------------------------------------------------------
--- MAIN UPDATE LOOP
-----------------------------------------------------------------
 
 function Lib:StartUpdateLoop()
     if self._running then return end
@@ -2684,7 +2478,6 @@ function Lib:StartUpdateLoop()
             if w.visible then w:update() end
         end
 
-        -- Poll all keybinds (always, regardless of window visibility)
         for _, kb in ipairs(self._keybinds) do
             kb:pollKey()
         end
